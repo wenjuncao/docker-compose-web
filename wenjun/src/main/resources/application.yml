@@ -1,0 +1,6 @@
+server:
+  port: 7395
+  servlet:
+    context-path: /docker
+  tomcat:
+    uri-encoding: UTF-8

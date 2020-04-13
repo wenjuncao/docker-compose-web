@@ -1,0 +1,75 @@
+version: "3"
+services:
+  jdk:
+    build:
+      context: ./services/jdk
+      dockerfile: Dockerfile
+    container_name: jdk
+    environment:
+      TZ: Asia/Shanghai
+    networks:
+      - default
+  redis:
+    build:
+      context: ./services/redis
+      dockerfile: Dockerfile
+    container_name: redis
+    ports:
+      - 6379:6379
+    volumes:
+      - ./services/redis/redis.conf:/etc/redis.conf:ro
+      - /usr/local/yuri/data/redis:/data/:rw
+    restart: always
+    entrypoint: ["redis-server", "/etc/redis.conf"]
+    environment:
+      TZ: Asia/Shanghai
+    networks:
+      - default
+  nginx:
+    build:
+      context: ./services/nginx
+      dockerfile: Dockerfile
+    container_name: nginx
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /usr/local/yuri/www:/www/:rw
+      - ./services/nginx/ssl:/ssl:rw
+      - ./services/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./logs/nginx:/var/log/nginx/:rw
+    environment:
+      TZ: Asia/Shanghai
+    restart: always
+    networks:
+      - default
+  app:
+    build:
+      context: ./services/app
+      dockerfile: Dockerfile
+    container_name: app
+    restart: always
+    ports:
+      - 7395:7395
+    environment:
+      - JAVA_OPTS=-Xmx256M -Dspring.profiles.active=test -Duser.timezone=GMT+08
+    depends_on:
+      - jdk
+      - nginx
+      - redis
+#  mysql:
+#    image: mysql:${MYSQL_VERSION}
+#    container_name: mysql
+#    ports:
+#      - "${MYSQL_HOST_PORT}:3306"
+#    volumes:
+#      - ${MYSQL_CONF_FILE}:/etc/mysql/conf.d/mysql.cnf:ro
+#      - ${DATA_DIR}/mysql:/var/lib/mysql/:rw
+#    restart: always
+#    networks:
+#      - default
+#    environment:
+#      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+#      TZ: Asia/Shanghai
+networks:
+  default:
